@@ -3,7 +3,10 @@ package main
 import (
 	"log"
 	"net/http"
-
+	"os"
+	
+	"github.com/meahmadhassan/go-fiber-api/models"
+	"github.com/meahmadhassan/go-fiber-api/storage"
 	"github.com/gofiber/fiber/v3"
 	"github.com/joho/godotenv"
 	"gorm.io/gorm"
@@ -45,6 +48,31 @@ func (r *Repository) CreateBook(context *fiber.Ctx) error {
 	return nil
 }
 
+func (r *Repository) DeleteBook(context *fiber.Ctx) error {
+	bookModel := models.Books{}
+	id := context.Params("id")
+	if id == "" {
+		context.Status(http.StatusInternalServerError).JSON(&fiber.Map{
+			"message": "id cannot be empty",
+		})
+		return nil
+	}
+
+	err := r.DB.Delete(bookModel, id)
+
+	if err.Error != nil {
+		context.Status(http.StatusBadRequest).JSON(&fiber.Map{
+			"message": "could not delete book",
+		})
+		return err.Error
+	}
+	context.Status(http.StatusOK).JSON(&fiber.Map{
+		"message": "book delete successfully",
+	})
+	return nil
+}
+
+
 func (r *Repository) GetBooks(context *fiber.Ctx) error {
 	bookModels := &[]models.Books{}
 
@@ -63,7 +91,6 @@ func (r *Repository) GetBooks(context *fiber.Ctx) error {
 
 }
 
-
 func(r *Repository) SetupRoutes(app *fiber.App){
 	api := app.Group("/api")
 	api.Post("/create_books", r.CreateBook)
@@ -79,6 +106,15 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	config := &storage.Config(
+		Host: os.Getenv("DB_HOST"),
+		Port: os.Getenv("DB_PORT"),
+		User: os.Getenv("DB_USER"),
+		Password: os.Getenv("DB_PASSWORD"),
+		DBName: os.Getenv("DB_NAME"),
+		SSLMode: os.Getenv("DB_SSLMODE"),
+	)
 
 	db, err := storage.NewConnection(config)
 	if err != nil {
