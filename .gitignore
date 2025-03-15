@@ -8,7 +8,6 @@
 
 # Test binary
 *.test
-/storage/
 /config/
 
 # Go build artifacts
